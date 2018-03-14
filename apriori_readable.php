@@ -35,6 +35,9 @@ function make_up_atoms($atoms, $basic_array, $max_phase)
         $deep_make_up_atoms = make_up_atoms($atoms, $step, $max_phase);
 
         $res = array_merge($res, $deep_make_up_atoms);
+
+        unset($step);
+        unset($deep_make_up_atoms);
     }
 
     return $res;
@@ -56,7 +59,7 @@ function get_all_item_makes($records, $max_phase)
         }
     }
 
-    $all_atoms = array_unique($all_atoms);
+    $all_atoms = array_values(array_unique($all_atoms));
 
     // 通过原子内容组合出最大阶数范围内的项
     return make_up_atoms($all_atoms, [], min($max_phase, $max_phase_in_records));
@@ -70,10 +73,11 @@ function get_item_makes_count($all_item_makes, $records, $rule_delimiter)
 
         $rule = implode($rule_delimiter, $item_make);
 
-        $item_makes_count[$rule] = 0;
-
         foreach ($records as $record) {
             if (atom_all_in_array($item_make, $record)) {
+                if (! array_key_exists($rule, $item_makes_count)) {
+                    $item_makes_count[$rule] = 0;
+                }
                 $item_makes_count[$rule]++;
             }
         }
@@ -112,7 +116,8 @@ function get_confidiences($item_makes_count, $min_confidience, $rule_delimiter)
             $from_rule_item = explode($rule_delimiter, $from_rule);
             $to_rule_item = explode($rule_delimiter, $to_rule);
 
-            if (atom_all_in_array($from_rule_item, $to_rule_item)) {
+            if (count($to_rule_item) === count($from_rule_item) + 1 && atom_all_in_array($from_rule_item, $to_rule_item)) {
+
                 $confidience = $to_item_make_count / $from_item_make_count;
 
                 if ($confidience >= $min_confidience) {
@@ -136,12 +141,16 @@ function get_lifts($confidiences, $supports)
 
     foreach ($confidiences as $from_rule => $info) {
 
-        $lifts[$from_rule] = [];
-
         foreach ($info as $to_rule => $confidience) {
 
-            $lifts[$from_rule][$to_rule] = $confidience / $supports[$to_rule];
+            if (array_key_exists($to_rule, $supports)) {
 
+                if (! array_key_exists($from_rule, $lifts)) {
+                    $lifts[$from_rule] = [];
+                }
+
+                $lifts[$from_rule][$to_rule] = $confidience / $supports[$to_rule];
+            }
         }
     }
 
@@ -159,7 +168,7 @@ function get_lifts($confidiences, $supports)
  * @access public
  * @return void
  */
-function apriori(array $records,  int $max_phase = 20, float $min_support = 0.1, float $min_confidience = 0.6, string $rule_delimiter = ',')
+function apriori(array $records, int $max_phase = 20, float $min_support = 0.1, float $min_confidience = 0.6, string $rule_delimiter = ',')
 {/*{{{*/
     $all_item_makes = get_all_item_makes($records, $max_phase);
 
@@ -172,8 +181,34 @@ function apriori(array $records,  int $max_phase = 20, float $min_support = 0.1,
     $lifts = get_lifts($confidiences, $supports);
 
     return [
+        'item_makes_count' => $item_makes_count,
         'supports' => $supports,
         'confidiences' => $confidiences,
         'lifts' => $lifts,
     ];
+}/*}}}*/
+
+function print_supports($supports)
+{/*{{{*/
+    $res = '';
+
+    foreach ($supports as $rule => $support) {
+        $res .= "$rule = $support\n";
+    }
+
+    return $res;
+}/*}}}*/
+
+function print_confidiences($confidiences)
+{/*{{{*/
+    $res = '';
+
+    foreach ($confidiences as $from_rule => $to_confidiences) {
+        $res .= "$from_rule\n";
+        foreach ($to_confidiences as $to_rule => $confidience) {
+            $res .= "=> $to_rule = $confidience\n";
+        }
+    }
+
+    return $res;
 }/*}}}*/
