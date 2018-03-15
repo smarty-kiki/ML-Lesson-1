@@ -193,7 +193,7 @@ function print_supports($supports)
     $res = '';
 
     foreach ($supports as $rule => $support) {
-        $res .= "$rule = $support\n";
+        $res .= "$rule: $support\n";
     }
 
     return $res;
@@ -206,7 +206,21 @@ function print_confidiences($confidiences)
     foreach ($confidiences as $from_rule => $to_confidiences) {
         $res .= "$from_rule\n";
         foreach ($to_confidiences as $to_rule => $confidience) {
-            $res .= "=> $to_rule = $confidience\n";
+            $res .= "=> $to_rule: $confidience\n";
+        }
+    }
+
+    return $res;
+}/*}}}*/
+
+function print_lifts($lifts)
+{/*{{{*/
+    $res = '';
+
+    foreach ($lifts as $from_rule => $to_lifts) {
+        $res .= "$from_rule\n";
+        foreach ($to_lifts as $to_rule => $lift) {
+            $res .= "=> $to_rule: $lift\n";
         }
     }
 
