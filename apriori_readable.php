@@ -126,7 +126,7 @@ function get_confidiences($item_makes_count, $min_confidience, $rule_delimiter)
                         $confidiences[$from_rule] = [];
                     }
 
-                    $confidiences[$from_rule][$to_rule] = $to_item_make_count / $from_item_make_count;
+                    $confidiences[$from_rule][$to_rule] = $confidience;
                 }
             }
         }
